@@ -15,6 +15,8 @@ var $ = require('gulp-load-plugins')();
 var del = require('del');
 var path = require('path');
 
+
+
 var browserify = require('browserify');
 var watchify = require('watchify');
 
@@ -46,17 +48,17 @@ var AUTOPREFIXER_BROWSERS = [                 // https://github.com/ai/autoprefi
 // Unified Watch Object
 var watchFiles = {
   serverViews: ['app/views/**/*.*'],
-  serverJS: ['gruntfile.js', 'server.js', 'config/**/*.js', 'app/**/*.js', '!app/tests/'],
+  serverJS: ['gulpfile.js', 'server.js', 'config/**/*.js', 'app/**/*.js', '!app/tests/'],
   clientViews: ['public/modules/**/views/**/*.html'],
   clientJS: ['public/js/*.js', 'public/modules/**/*.js'],
   clientCSS: ['public/modules/**/*.css'],
-  mochaTests: ['app/tests/**/*.js']
+  mochaTests: ['app/tests/**/*.js'],
+  images: 'public/assets/**/*'
 };
 
 
 var src = {};
 var watch = false;
-
 
 // The default task
 gulp.task('default', ['sync']);
@@ -68,9 +70,21 @@ gulp.task('default', ['sync']);
 
 // Clean
 gulp.task('clean', function (cb) {
-  cb(del.sync(['dist/styles', 'dist/scripts', 'dist/images']));
+  //cb(del.sync(['dist/styles', 'dist/scripts', 'dist/images']));
+  del(['build'], cb);
 });
 
+gulp.task('scripts', ['clean'], function() {
+  // Minify and copy all JavaScript (except vendor scripts)
+  // with sourcemaps all the way down
+  return gulp.src(paths.scripts)
+    .pipe(sourcemaps.init())
+      .pipe(coffee())
+      .pipe(uglify())
+      .pipe(concat('all.min.js'))
+    .pipe(sourcemaps.write())
+    .pipe(gulp.dest('build/js'));
+});
 
 // 3rd party libraries
 gulp.task('vendor', function() {
@@ -149,6 +163,34 @@ gulp.task('build:watch', function(cb) {
     gulp.watch(src.styles, ['styles']);
     cb();
   });
+});
+
+gulp.task('lint', function () {
+  var jshint = require('gulp-jshint');
+
+  gulp.src('./**/*.js')
+    .pipe(jshint());
+})
+
+//nodemon
+gulp.task('backend', function() {
+  var nodemon = require('gulp-nodemon');
+  var notify = require('gulp-notify');
+  var livereload = require('gulp-livereload');
+
+	// listen for changes
+	livereload.listen();
+	// configure nodemon
+	nodemon({
+		// the script to run the app
+		script: 'server.js',
+		ext: 'js'
+	}).on('restart', function(){
+		// when the app has restarted, run livereload.
+		gulp.src('server.js')
+			.pipe(livereload())
+			.pipe(notify('Reloading page, please wait...'));
+	})
 });
 
 // Launch a Node.js/Express server
