@@ -139,3 +139,8 @@ file in the project root. Documentation to the project is licensed under the
 [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) license. React logo
 image is a trademark of Facebook, Inc.
 # groups-react 
+
+
+
+npm verbose
+npm update --loglevel verbose

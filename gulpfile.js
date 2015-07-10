@@ -203,7 +203,7 @@ gulp.task('sync', ['serve'], function(cb) {
     https: false,
     // Informs browser-sync to proxy our Express app which would run
     // at the following location
-    proxy: 'localhost:5000'
+    proxy: 'localhost:3000'
   }, cb);
 
   process.on('exit', function() {
