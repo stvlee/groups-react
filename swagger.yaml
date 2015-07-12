@@ -1,0 +1,510 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: Biztalog API
+  description: The first version of the Biztalog API is an exciting step forward towards
+    making it easier for users to have open access to their data. We created it
+    so that you can surface the amazing content Biztalog users share every
+    second, in fun and innovative ways. Move your app forward with the Biztalog API
+  termsOfService: "http://www.biztalog.com/terms/"
+  contact:
+    name: biztalog api team
+    url: "http://dev.biztalog.com"
+  license:
+    name: Creative Commons 4.0 International
+    url: "http://creativecommons.org/licenses/by/4.0/"
+host: api.biztalog.com
+basePath: /v1
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+  - application/xml
+################################################################################
+#                                   Parameters                                 #
+################################################################################
+parameters:
+  user-id:
+    name: user-id
+    in: path
+    description: The user identifier number
+    type: number
+  tag-name:
+    name: tag-name
+    in: path
+    description: Tag name
+    type: string
+paths:
+  /users/{user-id}:
+    parameters:
+      - $ref: '#/parameters/user-id'
+    get:
+      security:
+        - key: []
+        - biztalogAuth:
+          - basic
+      tags:
+        - Users
+      description: Get basic information about a user.
+      responses:
+        200:
+          description: The user object
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/definitions/User'
+  /persons:
+    get:
+      description: "Gets `Person` objects.\nOptional query param of **size** determines\nsize of returned array\n"
+      parameters:
+        - name: size
+          in: query
+          description: Size of array
+          required: true
+          type: number
+          format: double
+      responses:
+        "200":
+          description: Successful response
+          schema:
+            title: ArrayOfPersons
+            type: array
+            items:
+              title: Person
+              type: object
+              properties:
+                name:
+                  type: string
+                single:
+                  type: boolean
+  /product/{product-id}:
+    parameters:
+      - name: product-id
+        in: path
+        description: The product ID
+        type: integer
+
+    get:
+      tags:
+        - Product
+      description: |
+        Get information about a product object.
+
+        Note: if you authenticate with an OAuth Token, you will receive the
+        `user_has_liked` key which quickly tells you whether the current user
+        has liked this item.
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/Product'
+  /products:
+    get:
+      summary: Product Types
+      description: "The Products endpoint returns information about the *Uber* products\noffered at a given location. The response includes the display name\nand other details about each product, and lists the products in the\nproper display order.\n"
+      parameters:
+        - name: latitude
+          in: query
+          description: Latitude component of location.
+          required: true
+          type: number
+          format: double
+        - name: longitude
+          in: query
+          description: Longitude component of location.
+          required: true
+          type: number
+          format: double
+      tags:
+        - Products
+      responses:
+        "200":
+          description: An array of products
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Product"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+  /estimates/price:
+    get:
+      summary: Price Estimates
+      description: "The Price Estimates endpoint returns an estimated price range\nfor each product offered at a given location. The price estimate is\nprovided as a formatted string with the full price range and the localized\ncurrency symbol.<br><br>The response also includes low and high estimates,\nand the [ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code for\nsituations requiring currency conversion. When surge is active for a particular\nproduct, its surge_multiplier will be greater than 1, but the price estimate\nalready factors in this multiplier.\n"
+      parameters:
+        - name: start_latitude
+          in: query
+          description: Latitude component of start location.
+          required: true
+          type: number
+          format: double
+        - name: start_longitude
+          in: query
+          description: Longitude component of start location.
+          required: true
+          type: number
+          format: double
+        - name: end_latitude
+          in: query
+          description: Latitude component of end location.
+          required: true
+          type: number
+          format: double
+        - name: end_longitude
+          in: query
+          description: Longitude component of end location.
+          required: true
+          type: number
+          format: double
+      tags:
+        - Estimates
+      responses:
+        "200":
+          description: An array of price estimates by product
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PriceEstimate"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+  /estimates/time:
+    get:
+      summary: Time Estimates
+      description: "The Time Estimates endpoint returns ETAs for all products offered at a given location, with the responses expressed as integers in seconds. We recommend that this endpoint be called every minute to provide the most accurate, up-to-date ETAs."
+      parameters:
+        - name: start_latitude
+          in: query
+          description: Latitude component of start location.
+          required: true
+          type: number
+          format: double
+        - name: start_longitude
+          in: query
+          description: Longitude component of start location.
+          required: true
+          type: number
+          format: double
+        - name: customer_uuid
+          in: query
+          type: string
+          format: uuid
+          description: Unique customer identifier to be used for experience customization.
+        - name: product_id
+          in: query
+          type: string
+          description: "Unique identifier representing a specific product for a given latitude & longitude."
+      tags:
+        - Estimates
+      responses:
+        "200":
+          description: An array of products
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Product"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+  /user:
+    post:
+      tags:
+        - user
+      summary: Add a new user
+      description: ""
+      operationId: addUser
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: body
+          name: body
+          description: User object that needs to be added to the store
+          required: false
+          schema:
+            $ref: "#/definitions/User"
+      responses:
+        "405":
+          description: Invalid input
+      security:
+        - biztalogAuth:
+          - write_user
+          - read_user
+    put:
+      tags:
+        - user
+      summary: Update an existing user
+      description: ""
+      operationId: updateUser
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: body
+          name: body
+          description: Pet object that needs to be added to the store
+          required: false
+          schema:
+            $ref: "#/definitions/User"
+      responses:
+        "405":
+          description: Validation exception
+        "404":
+          description: User not found
+        "400":
+          description: Invalid ID supplied
+      security:
+        - biztalogAuth:
+          - write_user
+          - read_user
+  /me:
+    get:
+      summary: User Profile
+      description: The User Profile endpoint returns information about the user that has authorized with the application.
+      tags:
+        - User
+      responses:
+        "200":
+          description: Profile information for a user
+          schema:
+            $ref: "#/definitions/Profile"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+  /history:
+    get:
+      summary: User Activity
+      description: "The User Activity endpoint returns data about a user's lifetime activity with Uber. The response will include pickup locations and times, dropoff locations and times, the distance of past requests, and information about which products were requested.<br><br>The history array in the response will have a maximum length based on the limit parameter. The response value count may exceed limit, therefore subsequent API requests may be necessary."
+      parameters:
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          description: Offset the list of returned results by this amount. Default is zero.
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          description: "Number of items to retrieve. Default is 5, maximum is 100."
+      tags:
+        - User
+      responses:
+        "200":
+          description: History information for the given user
+          schema:
+            $ref: "#/definitions/Activities"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+security:
+  - githubAccessCode:
+      - user
+      - "user:email"
+      - "user:follow"
+      - public_repo
+      - repo
+      - repo_deployment
+      - "repo:status"
+      - delete_repo
+      - notifications
+      - gist
+      - "read:repo_hook"
+      - "write:repo_hook"
+      - "admin:repo_hook"
+      - "read:org"
+      - "write:org"
+      - "admin:org"
+      - "read:public_key"
+      - "write:public_key"
+      - "admin:public_key"
+  - internalApiKey: []
+  - biztalogAuth:
+    - basic
+    - comments
+    - relationships
+    - likes
+  - key: []
+securityDefinitions:
+  biztalogAuth:
+    type: oauth2
+    authorizationUrl: "https://biztalog.com/api/oauth/authorize"
+    flow: implicit
+    scopes:
+      write_user: modify user in your account
+      read_user: read your user
+      basic: |
+       to read any and all data related to a user (e.g. following/followed-by
+        lists, photos, etc.) (granted by default)
+      comments: to create or delete comments on a user’s behalf
+      relationships: to follow and unfollow users on a user’s behalf
+      likes: to like and unlike items on a user’s behalf
+  key:
+    type: apiKey
+    in: query
+    name: access_token
+  githubAccessCode:
+    type: oauth2
+    scopes:
+      user: "Grants read/write access to profile info only. Note that this scope includes user:email and user:follow."
+      "user:email": Grants read access to a user’s email addresses.
+      "user:follow": Grants access to follow or unfollow other users.
+      public_repo: "Grants read/write access to code, commit statuses, and deployment statuses for public repositories and organizations."
+      repo: "Grants read/write access to code, commit statuses, and deployment statuses for public and private repositories and organizations."
+      repo_deployment: "Grants access to deployment statuses for public and private repositories. This scope is only necessary to grant other users or services access to deployment statuses, without granting access to the code."
+      "repo:status": Grants read/write access to public and private repository commit statuses. This scope is only necessary to grant other users or services access to private repository commit statuses without granting access to the code.
+      delete_repo: Grants access to delete adminable repositories.
+      notifications: Grants read access to a user’s notifications. repo also provides this access.
+      gist: Grants write access to gists.
+      "read:repo_hook": Grants read and ping access to hooks in public or private repositories.
+      "write:repo_hook": "Grants read, write, and ping access to hooks in public or private repositories."
+      "admin:repo_hook": "Grants read, write, ping, and delete access to hooks in public or private repositories."
+      "read:org": "Read-only access to organization, teams, and membership."
+      "write:org": Publicize and unpublicize organization membership.
+      "admin:org": "Fully manage organization, teams, and memberships."
+      "read:public_key": List and view details for public keys.
+      "write:public_key": "Create, list, and view details for public keys."
+      "admin:public_key": Fully manage public keys.
+    flow: accessCode
+    authorizationUrl: "https://github.com/login/oauth/authorize"
+    tokenUrl: "https://github.com/login/oauth/access_token"
+  internalApiKey:
+    type: apiKey
+    in: header
+    name: api_key
+definitions:
+  Product:
+    properties:
+      product_id:
+        type: string
+        description: "Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles."
+      description:
+        type: string
+        description: Description of product.
+      display_name:
+        type: string
+        description: Display name of product.
+      capacity:
+        type: string
+        description: "Capacity of product. For example, 4 people."
+      image:
+        type: string
+        description: Image URL representing the product.
+  PriceEstimate:
+    properties:
+      product_id:
+        type: string
+        description: "Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles"
+      currency_code:
+        type: string
+        description: "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code."
+      display_name:
+        type: string
+        description: Display name of product.
+      estimate:
+        type: string
+        description: "Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or \"Metered\" for TAXI."
+      low_estimate:
+        type: number
+        description: Lower bound of the estimated price.
+      high_estimate:
+        type: number
+        description: Upper bound of the estimated price.
+      surge_multiplier:
+        type: number
+        description: Expected surge multiplier. Surge is active if surge_multiplier is greater than 1. Price estimate already factors in the surge multiplier.
+  Profile:
+    properties:
+      firstName:
+        type: string
+        description: First name of the user.
+      lastName:
+        type: string
+        description: Last name of the user.
+      email:
+        type: string
+        description: Email address of the user
+      picture:
+        type: string
+        description: Image URL of the user.
+      countryCode:
+        type: string
+        description: Country code of the user.
+      promoCode:
+        type: string
+        description: Promo code of the user.
+  User:
+    properties:
+      id:
+        type: integer
+        format: int64
+      username:
+        type: string
+      firstName:
+        type: string
+        description: First name of the user.
+      lastName:
+        type: string
+        description: Last name of the user.
+      email:
+        type: string
+        description: Email address of the Uber user
+      password:
+        type: string
+      picture:
+        type: string
+        description: Image URL of the user.
+      phone:
+        type: string
+      status:
+        type: integer
+        format: int32
+        description: User Status
+  Activity:
+    properties:
+      uuid:
+        type: string
+        description: Unique identifier for the activity
+  Activities:
+    properties:
+      offset:
+        type: integer
+        format: int32
+        description: Position in pagination.
+      limit:
+        type: integer
+        format: int32
+        description: Number of items to retrieve (100 max).
+      count:
+        type: integer
+        format: int32
+        description: Total number of items available.
+      history:
+        type: array
+        items:
+          $ref: "#/definitions/Activity"
+  Error:
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string
