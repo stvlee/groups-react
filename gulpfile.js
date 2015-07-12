@@ -173,7 +173,7 @@ gulp.task('lint', function () {
 })
 
 //nodemon
-gulp.task('backend', function() {
+gulp.task('nodemon', function() {
   var nodemon = require('gulp-nodemon');
   var notify = require('gulp-notify');
   var livereload = require('gulp-livereload');
